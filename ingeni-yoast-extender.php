@@ -32,8 +32,23 @@ v2019.01 - Initial version
 
 */
 
+// Set default SEO meta title if none found
+add_filter( 'wpseo_title', 'yoast_extender_add_title', 10, 1 );
+add_filter( 'wpseo_metakey', 'yoast_extender_add_title', 10, 1 );
+function yoast_extender_add_title( $str ) {
+	if (strlen($str) == 0) {
+		global $post;
+
+		if ( strlen($post->post_title) > 0 ) {
+			$str = $post->post_title;
+		}
+	}
+  return $str;
+}
+
 
 // Set default SEO meta description if none found
+add_filter( 'wpseo_metadesc', 'yoast_extender_add_desc', 10, 1 );
 function yoast_extender_add_desc( $str ) {
 	if (strlen($str) == 0) {
 		global $post;
@@ -46,7 +61,7 @@ function yoast_extender_add_desc( $str ) {
 	}
   return $str;
 }
-add_filter( 'wpseo_metadesc', 'yoast_extender_add_desc', 10, 1 );
+
 
 /*
 <a class="button" href="https://naisda.com.au/wp-content/uploads/2019/04/NAISDA_Application_Form_2019-10.pdf" target="_blank" rel="noopener" 
@@ -57,16 +72,23 @@ add_shortcode( 'ga-track-event','do_ingeni_ga_track_event' );
 function do_ingeni_ga_track_event( $args ) {
 
 	$params = shortcode_atts( array(
-		'file_url' => '',
+		'file_url' => "",
 		'new_tab' => 1,
-		'category' => 'event',
-		'action' => 'Download',
-		'opt_label' => '',
-		'opt_value' => '',
-		'opt_noninteraction' => 0,
-		'text' => 'Download Now',
-		'class' => '',
+		'category' => "event",
+		'action' => "Download",
+		'opt_label' => "",
+		'opt_value' => "",
+		'opt_noninteraction' => 1,
+		'text' => "Download Now",
+		'class' => "",
 	), $args );
+
+
+	$domain = get_bloginfo('url');
+	if ( !startsWith( $params['file_url'], $domain ) ) {
+		$params['file_url'] = $domain . "/" . $params['file_url'];
+		$params['file_url'] = str_ireplace( "//", "/", $params['file_url'] );
+	}
 
 	$path_parts = pathinfo( $params['file_url'] );
 
@@ -92,9 +114,18 @@ function do_ingeni_ga_track_event( $args ) {
 		$target = '';
 	}
 
-	$retHtml = '<a class="'.$params['class'].' href="'.$params['file_url'].'" '.$target.' rel="noopener" onclick="ga(\'send\', \'' . $params['category']. '\', \'' . $params['action']. '\', \'' . $params['opt_label']. '\', \'' . $params['opt_value']. '\', \'' . $params['opt_noninteraction']. '\');">' . $params['text'] . '</a>';
+	$retHtml = '<a class="'.$params['class'].'" href="'.$params['file_url'].'" '.$target.' rel="noopener" onclick="ga(\'send\', \'' . $params['category']. '\', \'' . $params['action']. '\', \'' . $params['opt_label']. '\', \'' . $params['opt_value']. '\', ' . $params['opt_noninteraction']. ');">' . $params['text'] . '</a>';
 
 	return $retHtml;
+}
+
+
+
+if (!function_exists("startsWith")) {
+  function startsWith($haystack, $needle) {
+      // search backwards starting from haystack length characters from the end
+      return $needle === "" || strrpos($haystack, $needle, -strlen($haystack)) !== false;
+  }
 }
 
 

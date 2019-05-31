@@ -4,7 +4,7 @@ Contributors: Bruce McKinnon
 Tags: yoast, seo
 Requires at least: 4.8
 Tested up to: 5.1.1
-Stable tag: 2019.01
+Stable tag: 2019.02
 
 Used in conjunction with Yoast SEO. Automatically inserts meta descriptions and target words if none are specified.
 
@@ -74,3 +74,5 @@ class - Optional class to add to the <a> tag. Defaults to nothing.
 == Changelog ==
 
 v2019.01 - Initial version.
+
+v2019.02 - Misc bug fixes.

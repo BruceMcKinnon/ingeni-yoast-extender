@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Ingeni Yoast Extender
-Version: 2019.01
+Version: 2019.02
 Plugin URI: http://ingeni.net
 Author: Bruce McKinnon - ingeni.net
 Author URI: http://ingeni.net
@@ -28,7 +28,7 @@ Disclaimer:
 Requires : Wordpress 3.x or newer ,PHP 5 +
 
 v2019.01 - Initial version
-
+v2019.02 - Misc bug fixes
 
 */
 
@@ -56,7 +56,7 @@ function yoast_extender_add_desc( $str ) {
 		if ( strlen($post->post_excerpt) > 0 ) {
 			$str = $post->post_excerpt;
 		} else {
-			$str = get_first_sentence( $post->post_content );
+			$str = get_opening_sentence( $post->post_content );
 		}
 	}
   return $str;
@@ -83,15 +83,20 @@ function do_ingeni_ga_track_event( $args ) {
 		'class' => "",
 	), $args );
 
-
+	//fb_log($params['file_url']);
 	$domain = get_bloginfo('url');
-	if ( !startsWith( $params['file_url'], $domain ) ) {
-		$params['file_url'] = $domain . "/" . $params['file_url'];
-		$params['file_url'] = str_ireplace( "//", "/", $params['file_url'] );
+	//fb_log($domain);
+	if (  !startsWith( $params['file_url'], 'http' ) ) {
+		$params['file_url'] = str_ireplace('[url]', $domain, $params['file_url']);
+		if ( !startsWith( $params['file_url'], $domain ) ) {
+			
+			$params['file_url'] = str_ireplace( "//", "/", $params['file_url'] );
+			$params['file_url'] = $domain . $params['file_url'];
+		}
 	}
 
 	$path_parts = pathinfo( $params['file_url'] );
-
+	//fb_log(print_r($path_parts,true));
 	if ( strlen( $params['opt_label'] ) == 0 ) {
 		
 		$params['opt_label'] = $path_parts['extension'];
@@ -99,10 +104,6 @@ function do_ingeni_ga_track_event( $args ) {
 
 	if ( strlen( $params['opt_label'] ) == '') {
 		$params['opt_label'] = 'file';
-	}
-
-	if ( strlen( $params['label'] ) == '') {
-		$params['label'] = 'file';
 	}
 
 	if ( strlen( $params['opt_value'] ) == '') {
@@ -115,9 +116,38 @@ function do_ingeni_ga_track_event( $args ) {
 	}
 
 	$retHtml = '<a class="'.$params['class'].'" href="'.$params['file_url'].'" '.$target.' rel="noopener" onclick="ga(\'send\', \'' . $params['category']. '\', \'' . $params['action']. '\', \'' . $params['opt_label']. '\', \'' . $params['opt_value']. '\', ' . $params['opt_noninteraction']. ');">' . $params['text'] . '</a>';
-
+	//fb_log($retHtml);
 	return $retHtml;
 }
+
+
+
+if (!function_exists("get_opening_sentence")) {
+	function get_opening_sentence($content) {
+		$retVal = $content;
+
+		// Remove H4s
+		$clean = preg_replace('#<h4>(.*?)</h4>#', '', $content);
+		$clean = wp_strip_all_tags($clean);
+
+		$period = strpos($clean, ".");
+		if ($period === false)
+			$period = strlen($clean)-1;
+		$exclaim = strpos($clean, "!");
+		if ($exclaim === false)
+			$exclaim = strlen($clean)-1;
+		$question = strpos($clean, "?");
+		if ($question === false)
+			$question = strlen($clean)-1;
+
+		$loc = min( array($period,$exclaim,$question));
+
+		$retVal = substr($clean,0, ($loc+1) );
+
+		return $retVal;
+	}
+}
+
 
 
 

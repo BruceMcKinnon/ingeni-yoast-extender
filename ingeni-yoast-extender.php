@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Ingeni Yoast Extender
-Version: 2019.02
+Version: 2021.01
 Plugin URI: http://ingeni.net
 Author: Bruce McKinnon - ingeni.net
 Author URI: http://ingeni.net
@@ -29,8 +29,102 @@ Requires : Wordpress 3.x or newer ,PHP 5 +
 
 v2019.01 - Initial version
 v2019.02 - Misc bug fixes
+v2021.01 - Add support for EntryTitle over-riding
+				 - Add support for multiple keywords and insertion into the <head>
 
 */
+
+
+//
+// Add metaboxes
+//
+function iye_add_meta_box( $post_type, $post ) {
+	add_meta_box( 
+			'ingeni-yoast-extender-meta-box',
+			__( 'Ingeni Yoast Extender' ),
+			'iye_render_meta_box',
+			array('post', 'page'), // Add metabox to both posts and pages
+			'normal',
+			'default'
+	);
+}
+
+// Hooks
+add_action( 'add_meta_boxes', 'iye_add_meta_box', 10, 2 );
+add_action( 'save_post', 'iye_save_meta_box', 10, 2 );
+
+
+// Save the meta box content
+function iye_save_meta_box( $post_id, $post ) {
+
+  // Verify the nonce before proceeding.
+  if ( !isset( $_POST['iye_nonce'] ) || !wp_verify_nonce( $_POST['iye_nonce'], basename( __FILE__ ) ) )
+    return $post_id;
+
+  // Get the post type object.
+  $post_type = get_post_type_object( $post->post_type );
+
+  // Check if the current user has permission to edit the post.
+  if ( !current_user_can( $post_type->cap->edit_post, $post_id ) )
+    return $post_id;
+
+
+	// Save the entry title override
+  $new_value = ( isset( $_POST['iye_entry_title_override'] ) ? sanitize_text_field( trim($_POST['iye_entry_title_override']) ) : '' );
+  update_post_meta( $post_id, 'iye_entry_title_override', $new_value );
+
+	// Save the keywords
+  $new_value = ( isset( $_POST['iye_meta_keywords'] ) ? sanitize_text_field( trim($_POST['iye_meta_keywords']) ) : '' );
+  update_post_meta( $post_id, 'iye_meta_keywords', $new_value );
+}
+
+
+// Display the metabox
+function iye_render_meta_box( $post ) {
+  wp_nonce_field( basename( __FILE__ ), 'iye_nonce' ); ?>
+
+  <p>
+    <label for="iye_entry_title_override"><?php _e( "Override the default page Entry Title." ); ?></label>
+    <br />
+    <input class="widefat" type="text" name="iye_entry_title_override" id="iye_entry_title_override" value="<?php echo esc_attr( get_post_meta( $post->ID, 'iye_entry_title_override', true ) ); ?>" />
+  </p>
+
+	<p>
+    <label for="iye_meta_keywords"><?php _e( "Add SEO meta keywords or phrases, comma separated." ); ?></label>
+    <br />
+		<textarea id="iye_meta_keywords" name="iye_meta_keywords" rows="4" cols="50"><?php echo trim(esc_attr( get_post_meta( $post->ID, 'iye_meta_keywords', true ) ) ); ?></textarea>
+  </p>
+	<?php
+}
+
+
+// Hook the page titles
+add_filter( 'the_title', 'iye_title_overrider', 10, 2 );
+function iye_title_overrider( $title, $id = null ) {
+	if ( $id ) {
+	$override_title = get_post_meta( $id, 'iye_entry_title_override', true );
+		if ($override_title) {
+			$title = $override_title;
+		}
+	}
+	return $title;
+}
+
+
+// Hook the meta keywords
+add_action('wp_head', 'iye_add_keywords' );
+function iye_add_keywords() {
+	if ( is_page() || is_single() ) {
+    $id = get_queried_object_id();
+		if ($id) {
+    	$meta_keywords = trim( get_post_meta( $id, 'iye_meta_keywords', true ) );
+			if ($meta_keywords != '') {
+				echo ( '<meta name="keywords" content="'.$meta_keywords.'" />' );
+			}
+		} 
+	} 
+}
+
 
 // Set default SEO meta title if none found
 add_filter( 'wpseo_title', 'yoast_extender_add_title', 10, 1 );

@@ -4,7 +4,7 @@ Contributors: Bruce McKinnon
 Tags: yoast, seo
 Requires at least: 4.8
 Tested up to: 5.1.1
-Stable tag: 2021.01
+Stable tag: 2022.01
 
 Used in conjunction with Yoast SEO. Automatically inserts meta descriptions and target words if none are specified.
 
@@ -90,3 +90,5 @@ v2019.02 - Misc bug fixes.
 
 v2021.01 - Add support for EntryTitle over-riding
 	 - Add support for multiple keywords and insertion into the <head>
+
+v2022.01 - Support scenarios where there is no page content (e.g., Woo product with not product description). In this case, fall back to using the site name and page name.

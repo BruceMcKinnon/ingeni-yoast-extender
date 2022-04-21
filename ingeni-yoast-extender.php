@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Ingeni Yoast Extender
-Version: 2021.01
+Version: 2022.01
 Plugin URI: http://ingeni.net
 Author: Bruce McKinnon - ingeni.net
 Author URI: http://ingeni.net
@@ -30,7 +30,9 @@ Requires : Wordpress 3.x or newer ,PHP 5 +
 v2019.01 - Initial version
 v2019.02 - Misc bug fixes
 v2021.01 - Add support for EntryTitle over-riding
-				 - Add support for multiple keywords and insertion into the <head>
+		- Add support for multiple keywords and insertion into the <head>
+v2022.01 - Support scenarios where there is no page content (e.g., Woo product with not product description). In this case, fall back to using the site name and page name.
+
 
 */
 
@@ -151,6 +153,11 @@ function yoast_extender_add_desc( $str ) {
 			$str = $post->post_excerpt;
 		} else {
 			$str = get_opening_sentence( $post->post_content );
+		}
+
+		// If there is no page content, fallback to using the page title and the site name and description
+		if (trim($str) == '') {
+			$str = $post->post_title.' - '.get_bloginfo('name').' - '.get_bloginfo('description');
 		}
 	}
   return $str;
